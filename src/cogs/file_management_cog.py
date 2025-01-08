@@ -16,7 +16,8 @@ class FileManagementCog(commands.Cog):
     async def mv(self, interaction:discord.Interaction, target:str, output:str):
         if interaction.guild is None:
             return
-
+        ctx = await commands.Context.from_interaction(interaction)
+        await ctx.reply('working...')
         self.logger.debug(f'INIT - /mv - {interaction.user.global_name} called /mv target:{target} output:{output} in {interaction.guild.name}')
         ctx = await commands.Context.from_interaction(interaction)
         server = get_safe_guild_name(interaction.guild.name)
@@ -48,7 +49,8 @@ class FileManagementCog(commands.Cog):
         '''
         if interaction.guild is None:
             return
-
+        ctx = await commands.Context.from_interaction(interaction)
+        await ctx.reply('working...')
         self.logger.debug(f'INIT - /ls - {interaction.user.global_name}, filter:{filter}, folder:{folder}, in {interaction.guild.name}')
         ctx = await commands.Context.from_interaction(interaction)
         server = get_safe_guild_name(interaction.guild.name)
@@ -93,6 +95,8 @@ class FileManagementCog(commands.Cog):
     async def rm(self, interaction:discord.Interaction, file:str):
         if interaction.guild is None:
             return
+        ctx = await commands.Context.from_interaction(interaction)
+        await ctx.reply('working...')
         self.logger.debug(f'INIT - /rm - {interaction.user.global_name}, file:{file} in {interaction.guild.name}')
         ctx = await commands.Context.from_interaction(interaction)
         server = get_safe_guild_name(interaction.guild.name)

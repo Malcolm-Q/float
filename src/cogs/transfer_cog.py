@@ -20,6 +20,8 @@ class FileTransferCog(commands.Cog):
     async def upload(self, interaction:discord.Interaction, code:str):
         if interaction.guild is None:
             raise ValueError("No guild found")
+        ctx = await commands.Context.from_interaction(interaction)
+        await ctx.reply('working...')
         self.logger.debug(f'INIT - /upload - {interaction.user.global_name} called /upload code:{code} in {interaction.guild.name}')
         guild = get_safe_guild_name(interaction.guild.name)
         self.init_guild_in_processes(guild)
@@ -96,6 +98,8 @@ class FileTransferCog(commands.Cog):
     async def serve(self, interaction:discord.Interaction, file:str):
         if interaction.guild is None:
             raise ValueError("No guild found")
+        ctx = await commands.Context.from_interaction(interaction)
+        await ctx.reply('working...')
         self.logger.debug(f'INIT - /serve - {interaction.user.global_name} called /serve file:{file} in {interaction.guild.name}')
         guild = get_safe_guild_name(interaction.guild.name)
         self.init_guild_in_processes(guild)
@@ -115,7 +119,7 @@ class FileTransferCog(commands.Cog):
             for f in files:
                 if file.lower() in f.lower():
                     file = f
-        file_size_mb = os.path.getsize(file) / (1024 * 1024)
+        file_size_mb = os.path.getsize(f'./files/{guild}/{file}') / (1024 * 1024)
         if file_size_mb > CONFIG.max_file_size_mb:
             ctx = await commands.Context.from_interaction(interaction)
             await ctx.reply(f"File exceeds download limit of {CONFIG.max_file_size_mb} MB", ephemeral=True)
@@ -123,7 +127,7 @@ class FileTransferCog(commands.Cog):
             return
         self.logger.debug(f"RUN - /serve - {interaction.user.global_name} starting croc for file: {file}")
         process = await asyncio.create_subprocess_exec(
-            CONFIG.croc_path,"--yes", "send", f"./files/{guild}/"+file,
+            CONFIG.croc_path,"--yes", "send", f"./files/{guild}/{file}",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
