@@ -103,6 +103,10 @@ class FileManagementCog(commands.Cog):
             self.logger.warning(f'ABUSE - /rm - {interaction.user.global_name} attempted to delete outside of server folder\ntarget: {target_path}\narg: {file}')
             await ctx.reply('Invalid file path!', ephemeral=True)
             return
+        if target_path == base_path:
+            self.logger.warning(f'ABUSE - /rm - {interaction.user.global_name} attempted to delete server folder\ntarget: {target_path}\narg: {file}')
+            await ctx.reply('Invalid file path!', ephemeral=True)
+            return
         if not os.path.exists(target_path):
             self.logger.info(f'USAGE - FAIL - /rm - {interaction.user.global_name} attempted to delete non-existent file: {target_path}')
             await ctx.reply(f'Could not find {file} to delete!\nCall /ls', ephemeral=True)
