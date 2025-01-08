@@ -17,28 +17,27 @@ class FileManagementCog(commands.Cog):
         if interaction.guild is None:
             return
         ctx = await commands.Context.from_interaction(interaction)
-        await ctx.reply('working...')
+        msg = await ctx.reply('working...')
         self.logger.debug(f'INIT - /mv - {interaction.user.global_name} called /mv target:{target} output:{output} in {interaction.guild.name}')
-        ctx = await commands.Context.from_interaction(interaction)
         server = get_safe_guild_name(interaction.guild.name)
         base_path = os.path.abspath(f'./files/{server}')
         target_path = os.path.abspath(os.path.join(base_path, target))
         output_path = os.path.abspath(os.path.join(base_path, output))
         if not target_path.startswith(base_path) or not output_path.startswith(base_path):
             self.logger.warning(f'ABUSE - /mv - {interaction.user.global_name} attempted to delete outside of server folder\ntarget: {target_path}\narg: {target}\noutput: {output_path}\narg: {output}')
-            await ctx.reply('Invalid file path!', ephemeral=True)
+            await msg.edit(content='Invalid file path!')
             return
         if not os.path.exists(target_path):
             self.logger.info(f'USAGE - FAIL - /mv - {interaction.user.global_name} attempted to move non-existent file: {target_path} to: {output_path}')
-            await ctx.reply(f'Could not find {target} to move!\nCall /ls', ephemeral=True)
+            await msg.edit(content=f'Could not find {target} to move!\nCall /ls')
             return
         if os.path.exists(output_path):
             self.logger.info(f'USAGE - FAIL - /mv - {interaction.user.global_name} attempted to move file: {target_path} to existing path: {output_path}')
-            await ctx.reply(f'{output} already exists!\nCall /rm to delete it or rename it first', ephemeral=True)
+            await msg.edit(content=f'{output} already exists!\nCall /rm to delete it or rename it first')
             return
         os.rename(target_path, output_path)
         self.logger.info(f'USAGE - SUCCESS - /mv - {interaction.user.global_name} moved: {target_path} to: {output_path}')
-        await ctx.reply(f'Moved {target} to {output}', ephemeral=True)
+        await msg.edit(content=f'Moved {target} to {output}')
 
     @app_commands.command(name='ls', description='list downloadable files')
     @app_commands.describe(filter='A sub string to filter results by')
@@ -50,21 +49,20 @@ class FileManagementCog(commands.Cog):
         if interaction.guild is None:
             return
         ctx = await commands.Context.from_interaction(interaction)
-        await ctx.reply('working...')
+        msg = await ctx.reply('working...')
         self.logger.debug(f'INIT - /ls - {interaction.user.global_name}, filter:{filter}, folder:{folder}, in {interaction.guild.name}')
-        ctx = await commands.Context.from_interaction(interaction)
         server = get_safe_guild_name(interaction.guild.name)
         base_path = os.path.abspath(f'./files/{server}')
         target_path = os.path.abspath(os.path.join(base_path, folder))
 
         if not target_path.startswith(base_path):
             self.logger.warning(f'ABUSE - /ls - {interaction.user.global_name} attempted to list outside of server folder\ntarget: {target_path}\narg: {folder}')
-            await ctx.reply('Invalid folder path!', ephemeral=True)
+            await msg.edit(content='Invalid folder path!')
             return
 
         if not os.path.exists(target_path) or not os.path.isdir(target_path):
             self.logger.info(f'USAGE - FAIL - /ls - {interaction.user.global_name} attempted to list non-existent folder: {target_path}')
-            await ctx.reply(f'Could not find folder {folder}!\nCall /ls', ephemeral=True)
+            await msg.edit(content=f'Could not find folder {folder}!\nCall /ls')
             return
 
         files = os.listdir(target_path)
@@ -74,7 +72,7 @@ class FileManagementCog(commands.Cog):
 
         if len(files) == 0:
             self.logger.info(f'USAGE - SUCCESS - /ls - {interaction.user.global_name} listed empty folder: {target_path} in {interaction.guild.name}')
-            await ctx.reply('No files found', ephemeral=True)
+            await msg.edit(content='No files found')
             return
 
         file_details = []
@@ -88,7 +86,7 @@ class FileManagementCog(commands.Cog):
                 file_details.append(f'{file} - [Directory]')
 
         self.logger.info(f'USAGE - SUCCESS - /ls - {interaction.user.global_name} listed folder: {target_path} in {interaction.guild.name}')
-        await ctx.send('\n'.join(file_details), ephemeral=True)
+        await msg.edit(content='\n'.join(file_details))
 
     @app_commands.command(name='rm', description='Delete a file')
     @app_commands.describe(file = 'The file or folder to delete')
@@ -96,28 +94,27 @@ class FileManagementCog(commands.Cog):
         if interaction.guild is None:
             return
         ctx = await commands.Context.from_interaction(interaction)
-        await ctx.reply('working...')
+        msg = await ctx.reply('working...')
         self.logger.debug(f'INIT - /rm - {interaction.user.global_name}, file:{file} in {interaction.guild.name}')
-        ctx = await commands.Context.from_interaction(interaction)
         server = get_safe_guild_name(interaction.guild.name)
         base_path = os.path.abspath(f'./files/{server}')
         target_path = os.path.abspath(os.path.join(base_path, file))
         self.logger.debug(f'RESULT - base_path: {base_path} target_path: {target_path}')
         if not target_path.startswith(base_path):
             self.logger.warning(f'ABUSE - /rm - {interaction.user.global_name} attempted to delete outside of server folder\ntarget: {target_path}\narg: {file}')
-            await ctx.reply('Invalid file path!', ephemeral=True)
+            await msg.edit(content='Invalid file path!')
             return
         if target_path == base_path:
             self.logger.warning(f'ABUSE - /rm - {interaction.user.global_name} attempted to delete server folder\ntarget: {target_path}\narg: {file}')
-            await ctx.reply('Invalid file path!', ephemeral=True)
+            await msg.edit(content='Invalid file path!')
             return
         if not os.path.exists(target_path):
             self.logger.info(f'USAGE - FAIL - /rm - {interaction.user.global_name} attempted to delete non-existent file: {target_path}')
-            await ctx.reply(f'Could not find {file} to delete!\nCall /ls', ephemeral=True)
+            await msg.edit(content=f'Could not find {file} to delete!\nCall /ls')
             return
         os.remove(target_path)
         self.logger.info(f'USAGE - SUCCESS - /rm - {interaction.user.global_name} deleted: {target_path}')
-        await ctx.reply(f'Deleted {file}', ephemeral=True)
+        await msg.edit(content=f'Deleted {file}')
 
 async def setup(client):
   await client.add_cog(FileManagementCog(client))

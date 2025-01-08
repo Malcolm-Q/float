@@ -6,4 +6,4 @@ services:
     volumes:
       - /home/float/files:/app/src/files
     command: >
-      sh -c "mkdir -p /home/float/files && python main.py"
+      python main.py

@@ -21,13 +21,12 @@ class FileTransferCog(commands.Cog):
         if interaction.guild is None:
             raise ValueError("No guild found")
         ctx = await commands.Context.from_interaction(interaction)
-        await ctx.reply('working...')
+        msg = await ctx.reply('working...')
         self.logger.debug(f'INIT - /upload - {interaction.user.global_name} called /upload code:{code} in {interaction.guild.name}')
         guild = get_safe_guild_name(interaction.guild.name)
         self.init_guild_in_processes(guild)
         if len(self.processes[guild]) > CONFIG.max_active_processes:
-            ctx = await commands.Context.from_interaction(interaction)
-            await ctx.send("Too many active processes. Please try again later.", ephemeral=True)
+            await msg.edit(content="Too many active processes. Please try again later.")
             self.logger.info(f'USAGE - FAIL - /upload - {interaction.user.global_name} too many active processes in {interaction.guild.name} max_processes:{CONFIG.max_active_processes}, active_processes:{len(self.processes[guild])}')
             return
         args = [CONFIG.croc_path,"--overwrite", "--out", f"./files/{guild}/", code]
@@ -51,7 +50,6 @@ class FileTransferCog(commands.Cog):
         }
         file_size_mb = None
         file_name = ""
-        msg = None
         if process.stdin is None or process.stderr is None:
             if process.returncode is None:
                 process.terminate()
@@ -60,17 +58,16 @@ class FileTransferCog(commands.Cog):
         try:
             file_name, file_size_mb = await self.get_name_and_size_from_croc(process)
             self.processes[guild][pid]['file'] = file_name
-            ctx = await commands.Context.from_interaction(interaction)
             if file_size_mb is not None:
                 if file_size_mb <= CONFIG.max_file_size_mb:
                     self.logger.info(f"USAGE - SUCCESS - /upload - {interaction.user.global_name} File {file_name} is {file_size_mb} MB")
                     process.stdin.write(b'y\n')
-                    msg = await ctx.send("Uploading file...", ephemeral=True)
+                    await msg.edit(content="Uploading file...")
                 else:
                     self.logger.info(f"USAGE - FAIL - /upload - {interaction.user.global_name} File {file_name} exceeds upload limit of {CONFIG.max_file_size_mb} MB")
                     self.logger.debug(f"EXITING - /upload - {pid} - CANCELLING UPLOAD")
                     process.stdin.write(b'n\n')
-                    await ctx.send(f"File exceeds upload limit of {CONFIG.max_file_size_mb} MB", ephemeral=True)
+                    await msg.edit(content=f"File exceeds upload limit of {CONFIG.max_file_size_mb} MB")
                     self.processes[guild].pop(pid)
                     await process.wait()
                     self.logger.debug(f"EXITING - /upload - {pid} - PROCESS AWAITED")
@@ -84,7 +81,7 @@ class FileTransferCog(commands.Cog):
             await process.wait()
             self.logger.debug(f"EXECUTING - /upload - {pid} - PROCESS UPLOAD AWAITED")
         finally:
-            if msg is not None and not self.processes[guild][pid]['cancelled']:
+            if not self.processes[guild][pid]['cancelled']:
                 await msg.edit(content="File uploaded!")
             if process.returncode is None:
                 self.logger.debug(f"EXITING - /upload - {pid} - PROCESS TERMINATED")
@@ -99,20 +96,18 @@ class FileTransferCog(commands.Cog):
         if interaction.guild is None:
             raise ValueError("No guild found")
         ctx = await commands.Context.from_interaction(interaction)
-        await ctx.reply('working...')
+        msg = await ctx.reply('working...')
         self.logger.debug(f'INIT - /serve - {interaction.user.global_name} called /serve file:{file} in {interaction.guild.name}')
         guild = get_safe_guild_name(interaction.guild.name)
         self.init_guild_in_processes(guild)
         if len(self.processes[guild]) > CONFIG.max_active_processes:
-            ctx = await commands.Context.from_interaction(interaction)
-            await ctx.send("Too many active processes. Please try again later.", ephemeral=True)
+            await msg.edit(content="Too many active processes. Please try again later.")
             self.logger.info(f'USAGE - FAIL - /serve - {interaction.user.global_name} too many active processes in {interaction.guild.name} max_processes:{CONFIG.max_active_processes}, active_processes:{len(self.processes[guild])}')
         base_path = os.path.abspath(f'./files/{guild}')
         target_path = os.path.abspath(os.path.join(base_path, file))
         if not target_path.startswith(base_path):
             self.logger.warning(f'ABUSE - /serve - {interaction.user.global_name} attempted to access outside of guild folder\ntarget: {target_path}\narg: {file}')
-            ctx = await commands.Context.from_interaction(interaction)
-            await ctx.reply('Invalid file path!', ephemeral=True)
+            await msg.edit(content='Invalid file path!')
             return
         if not os.path.exists(f"./files/{guild}/{file}"):
             files = os.listdir(f'./files/{guild}')
@@ -121,8 +116,7 @@ class FileTransferCog(commands.Cog):
                     file = f
         file_size_mb = os.path.getsize(f'./files/{guild}/{file}') / (1024 * 1024)
         if file_size_mb > CONFIG.max_file_size_mb:
-            ctx = await commands.Context.from_interaction(interaction)
-            await ctx.reply(f"File exceeds download limit of {CONFIG.max_file_size_mb} MB", ephemeral=True)
+            await msg.edit(content=f"File exceeds download limit of {CONFIG.max_file_size_mb} MB")
             self.logger.info(f"USAGE - FAIL - /serve - {interaction.user.global_name} File {file} exceeds download limit of {CONFIG.max_file_size_mb} MB")
             return
         self.logger.debug(f"RUN - /serve - {interaction.user.global_name} starting croc for file: {file}")
@@ -145,7 +139,6 @@ class FileTransferCog(commands.Cog):
 
         file_size = None
         code = None
-        msg = None
 
         if process.stderr is None:
             if process.returncode is None:
@@ -154,9 +147,8 @@ class FileTransferCog(commands.Cog):
             return
         try:
             code, file_size = await self.get_code_from_croc(process)
-            ctx = await commands.Context.from_interaction(interaction)
             if file_size and code:
-                msg = await ctx.send(f"File size: {file_size}\nCode: {code}", ephemeral=True)
+                await msg.edit(content=f"File size: {file_size}\nCode: {code}")
                 self.logger.info(f"USAGE - SUCCESS - /serve - {interaction.user.global_name} File size: {file_size}, Code: {code}")
                 while True:
                     try:
@@ -173,12 +165,12 @@ class FileTransferCog(commands.Cog):
                         self.processes[guild][pid]['active'] = True
                         break
             else:
-                await ctx.send("Failed to extract file size or code.", ephemeral=True)
+                await msg.edit(content="Failed to extract file size or code.")
                 self.logger.error(f"ERROR - /serve - {interaction.user.global_name} Failed to extract file size or code")
                 process.kill()
             await process.wait()
         finally:
-            if msg is not None and not self.processes[guild][pid]['cancelled']:
+            if not self.processes[guild][pid]['cancelled']:
                 await msg.edit(content="File served!")
             if process.returncode is None:
                 self.logger.debug(f"EXITING - /serve - {pid} - PROCESS TERMINATED")
@@ -191,7 +183,9 @@ class FileTransferCog(commands.Cog):
 
     @app_commands.command(name='ps', description='list active processes')
     async def ps(self, interaction:discord.Interaction):
-        msg = ""
+        content = ""
+        ctx = await commands.Context.from_interaction(interaction)
+        msg = await ctx.reply('working...', ephemeral=True)
         if interaction.guild is None:
             raise ValueError("No guild found")
         self.logger.debug(f'INIT - /ps - {interaction.user.global_name} called /ps in {interaction.guild.name}')
@@ -199,17 +193,16 @@ class FileTransferCog(commands.Cog):
         self.init_guild_in_processes(guild)
         for process, i in enumerate(self.processes[guild].keys()):
             formatted_time = format_time_difference(self.processes[guild][process]['time'], datetime.now())
-            msg += f"\nProcess {i}:\n"
-            msg += f"\tfile: {self.processes[guild][process]['file']}\n"
-            msg += f"\towner: {self.processes[guild][process]['owner']}\n"
-            msg += f"\ttime active: {formatted_time}\n"
-            msg += f"\toperation: {self.processes[guild][process]['operation']}\n"
-            msg += f"\tactive: {self.processes[guild][process]['active']}\n"
-            msg += f"\tto kill use /kill {i}\n"
-        if msg == "":
-            msg = "No active processes"
-        ctx = await commands.Context.from_interaction(interaction)
-        await ctx.reply(msg, ephemeral=True)
+            content += f"\nProcess {i}:\n"
+            content += f"\tfile: {self.processes[guild][process]['file']}\n"
+            content += f"\towner: {self.processes[guild][process]['owner']}\n"
+            content += f"\ttime active: {formatted_time}\n"
+            content += f"\toperation: {self.processes[guild][process]['operation']}\n"
+            content += f"\tactive: {self.processes[guild][process]['active']}\n"
+            content += f"\tto kill use /kill {i}\n"
+        if content == "":
+            content = "No active processes"
+        await msg.edit(content=content)
         self.logger.info(f'USAGE - SUCCESS - /ps - {interaction.user.global_name} listed active processes in {interaction.guild.name}')
 
     @app_commands.command(name='kill', description='kill a process (use /ps to list)')
@@ -217,11 +210,12 @@ class FileTransferCog(commands.Cog):
     async def kill(self, interaction:discord.Interaction, id:int):
         if interaction.guild is None:
             raise ValueError("No guild found")
+        ctx = await commands.Context.from_interaction(interaction)
+        msg = await ctx.reply('working...', ephemeral=True)
         self.logger.debug(f'INIT - /kill - {interaction.user.global_name} called /kill id:{id} in {interaction.guild.name}')
         guild = get_safe_guild_name(interaction.guild.name)
-        ctx = await commands.Context.from_interaction(interaction)
         if len(self.processes[guild].keys()) < id:
-            await ctx.reply("Invalid process id, use /ps", ephemeral=True)
+            await msg.edit(content="Invalid process id, use /ps")
             self.logger.info(f'USAGE - FAIL - /kill - {interaction.user.global_name} invalid process id:{id} in {interaction.guild.name}')
             return
         key = list(self.processes[guild].keys())[id]
@@ -232,7 +226,7 @@ class FileTransferCog(commands.Cog):
         if process.returncode is None:
             process.terminate()
         self.processes[guild].pop(key)
-        await ctx.reply(f"Process {id} killed.", ephemeral=True)
+        await msg.edit(content=f"Process {id} killed.")
         self.logger.info(f'USAGE - SUCCESS - /kill - {interaction.user.global_name} killed process id:{id} in {interaction.guild.name}')
 
     def init_guild_in_processes(self, guild):
