@@ -7,7 +7,7 @@ A group of crocodiles is called a *float.*
 
 You need a .env file with the BOT_TOKEN key.
 
-If running via docker compose a volume for the files will be mounted at `/home/float/files`.
+If running via `docker compose up --build` a volume for the files will be mounted at `/home/float/files`.
 
 This bot provides simple file storage and transfers localized to the discord server(s) it is in.  
 

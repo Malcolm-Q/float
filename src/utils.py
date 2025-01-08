@@ -39,7 +39,7 @@ def get_safe_guild_name(guild_name:str | None) -> str:
         raise ValueError("guild_name was not found")
     safe_name = re.sub(r'[<>:"/\\|?* ]', '_', guild_name).lower()
     if not os.path.exists(f'./files/{safe_name}/'):
-        os.mkdir(f'./files/{safe_name}/')
+        os.makedirs(f'./files/{safe_name}/')
     return safe_name
 
 def get_logger() -> logging.Logger:
