@@ -21,7 +21,7 @@ class FileTransferCog(commands.Cog):
         if interaction.guild is None:
             raise ValueError("No guild found")
         ctx = await commands.Context.from_interaction(interaction)
-        msg = await ctx.reply('working...')
+        msg = await ctx.reply('working...', ephemeral=True)
         self.logger.debug(f'INIT - /upload - {interaction.user.global_name} called /upload code:{code} in {interaction.guild.name}')
         guild = get_safe_guild_name(interaction.guild.name)
         self.init_guild_in_processes(guild)
@@ -96,7 +96,7 @@ class FileTransferCog(commands.Cog):
         if interaction.guild is None:
             raise ValueError("No guild found")
         ctx = await commands.Context.from_interaction(interaction)
-        msg = await ctx.reply('working...')
+        msg = await ctx.reply('working...', ephemeral=True)
         self.logger.debug(f'INIT - /serve - {interaction.user.global_name} called /serve file:{file} in {interaction.guild.name}')
         guild = get_safe_guild_name(interaction.guild.name)
         self.init_guild_in_processes(guild)

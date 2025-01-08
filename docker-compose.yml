@@ -4,6 +4,9 @@ services:
     environment:
       - BOT_TOKEN=${BOT_TOKEN}
     volumes:
-      - /home/float/files:/app/src/files
+      - files:/app/src/files
     command: >
       python main.py
+
+volumes:
+  files:

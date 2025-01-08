@@ -7,8 +7,6 @@ RUN echo "y" | croc --classic
 
 WORKDIR /app
 
-RUN mkdir -p /app/src/files
-
 COPY . /app
 
 RUN pip install --no-cache-dir -r requirements.txt

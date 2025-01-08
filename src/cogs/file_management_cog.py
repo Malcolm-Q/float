@@ -17,7 +17,7 @@ class FileManagementCog(commands.Cog):
         if interaction.guild is None:
             return
         ctx = await commands.Context.from_interaction(interaction)
-        msg = await ctx.reply('working...')
+        msg = await ctx.reply('working...', ephemeral=True)
         self.logger.debug(f'INIT - /mv - {interaction.user.global_name} called /mv target:{target} output:{output} in {interaction.guild.name}')
         server = get_safe_guild_name(interaction.guild.name)
         base_path = os.path.abspath(f'./files/{server}')
@@ -49,7 +49,7 @@ class FileManagementCog(commands.Cog):
         if interaction.guild is None:
             return
         ctx = await commands.Context.from_interaction(interaction)
-        msg = await ctx.reply('working...')
+        msg = await ctx.reply('working...', ephemeral=True)
         self.logger.debug(f'INIT - /ls - {interaction.user.global_name}, filter:{filter}, folder:{folder}, in {interaction.guild.name}')
         server = get_safe_guild_name(interaction.guild.name)
         base_path = os.path.abspath(f'./files/{server}')
@@ -94,7 +94,7 @@ class FileManagementCog(commands.Cog):
         if interaction.guild is None:
             return
         ctx = await commands.Context.from_interaction(interaction)
-        msg = await ctx.reply('working...')
+        msg = await ctx.reply('working...', ephemeral=True)
         self.logger.debug(f'INIT - /rm - {interaction.user.global_name}, file:{file} in {interaction.guild.name}')
         server = get_safe_guild_name(interaction.guild.name)
         base_path = os.path.abspath(f'./files/{server}')
