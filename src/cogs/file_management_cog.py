@@ -79,9 +79,9 @@ class FileManagementCog(commands.Cog):
         for file in files:
             file_path = os.path.join(target_path, file)
             if os.path.isfile(file_path):
-                size = os.path.getsize(file_path)
+                size = os.path.getsize(file_path) / (1024 * 1024)
                 modified_time = datetime.fromtimestamp(os.path.getmtime(file_path)).strftime('%Y-%m-%d %H:%M:%S')
-                file_details.append(f'{file} - Size: {size} bytes - Modified: {modified_time}')
+                file_details.append(f'{file} - Size: {size:.2f} MB - Modified: {modified_time}')
             else:
                 file_details.append(f'{file} - [Directory]')
 

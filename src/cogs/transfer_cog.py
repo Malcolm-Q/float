@@ -103,12 +103,24 @@ class FileTransferCog(commands.Cog):
             ctx = await commands.Context.from_interaction(interaction)
             await ctx.send("Too many active processes. Please try again later.", ephemeral=True)
             self.logger.info(f'USAGE - FAIL - /serve - {interaction.user.global_name} too many active processes in {interaction.guild.name} max_processes:{CONFIG.max_active_processes}, active_processes:{len(self.processes[guild])}')
+        base_path = os.path.abspath(f'./files/{guild}')
+        target_path = os.path.abspath(os.path.join(base_path, file))
+        if not target_path.startswith(base_path):
+            self.logger.warning(f'ABUSE - /serve - {interaction.user.global_name} attempted to access outside of guild folder\ntarget: {target_path}\narg: {file}')
+            ctx = await commands.Context.from_interaction(interaction)
+            await ctx.reply('Invalid file path!', ephemeral=True)
             return
         if not os.path.exists(f"./files/{guild}/{file}"):
             files = os.listdir(f'./files/{guild}')
             for f in files:
                 if file.lower() in f.lower():
                     file = f
+        file_size_mb = os.path.getsize(file) / (1024 * 1024)
+        if file_size_mb > CONFIG.max_file_size_mb:
+            ctx = await commands.Context.from_interaction(interaction)
+            await ctx.reply(f"File exceeds download limit of {CONFIG.max_file_size_mb} MB", ephemeral=True)
+            self.logger.info(f"USAGE - FAIL - /serve - {interaction.user.global_name} File {file} exceeds download limit of {CONFIG.max_file_size_mb} MB")
+            return
         self.logger.debug(f"RUN - /serve - {interaction.user.global_name} starting croc for file: {file}")
         process = await asyncio.create_subprocess_exec(
             CONFIG.croc_path,"--yes", "send", f"./files/{guild}/"+file,

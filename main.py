@@ -21,6 +21,5 @@ async def on_ready():
     except Exception as e:
         logger.error(f'failed to load cogs and sync tree: {e}')
     logger.info(f'Logged in as {client.user}')
-    print('hi')
 
 client.run(bot_token)
