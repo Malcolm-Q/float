@@ -5,13 +5,16 @@ A group of crocodiles is called a *float.*
 
 **You must install croc on the machine running the bot.**  `curl https://getcroc.schollz.com | bash` or [install a release](https://github.com/schollz/croc/releases) and update `croc_path` in the config.json to point to the binary.
 
-To install croc on my friends machines and add send and receive options to their context menus I use this script: [windows](https://gist.github.com/Malcolm-Q/f933b0a5bbf43f9994b8fe69c589ac8a) & [Linux](https://gist.github.com/Malcolm-Q/bc7c98b4996c97f90ec6a5a1781e2bf6)
-
 This bot provides simple file storage and transfers localized to the discord server(s) it is in.  
 
 Under ideal conditions the upload and download is faster than Google Drive or other cloud storage alternatives, more secure, and much faster to interface with.  
 
-**Bot Commands:**
+To install croc on my friends machines and add send and receive options to their context menus I use this script: [windows](https://gist.github.com/Malcolm-Q/f933b0a5bbf43f9994b8fe69c589ac8a) & [Linux](https://gist.github.com/Malcolm-Q/bc7c98b4996c97f90ec6a5a1781e2bf6)  
+Here's what it looks like:
+![send with croc img](https://github.com/user-attachments/assets/1978d0d2-1d7d-40ba-b737-5b67dfca4fba)  
+![receive with croc img](https://github.com/user-attachments/assets/c02f4922-bfae-466f-9a14-a4a14d0ccac5)
+
+# Bot Commands:
 - /upload --code
     - Allows you to upload a file to the server folder with croc.
     - The code arg is mandatory and must be a valid croc code.
@@ -31,6 +34,15 @@ Under ideal conditions the upload and download is faster than Google Drive or ot
     - Lists processes
 - /kill --id
     - Kills the process listed in /ps
+ 
+# Example Usage
+You make a build of a game you're working on and want to test it with your friends.  
+Right click the folder and click `send with croc`, the code will be copied to your clipboard.  
+In discord do `/upload <code>`  
+
+Notify your friends it is uploaded.
+
+They can do `/serve <folder_name>`
+Then in file explorer right click where they want to receive it, hit `receive with croc` and paste the code the bot sent.
 
 croc is is licensed under the MIT License. See LICENSE or https://github.com/schollz/croc for details.
-
