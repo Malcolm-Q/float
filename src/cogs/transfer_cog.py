@@ -191,7 +191,7 @@ class FileTransferCog(commands.Cog):
         self.logger.debug(f'INIT - /ps - {interaction.user.global_name} called /ps in {interaction.guild.name}')
         guild = get_safe_guild_name(interaction.guild.name)
         self.init_guild_in_processes(guild)
-        for process, i in enumerate(self.processes[guild].keys()):
+        for i, process in enumerate(self.processes[guild].keys()):
             formatted_time = format_time_difference(self.processes[guild][process]['time'], datetime.now())
             content += f"\nProcess {i}:\n"
             content += f"\tfile: {self.processes[guild][process]['file']}\n"
