@@ -43,7 +43,7 @@ class FileManagementCog(commands.Cog):
     @app_commands.command(name='ls', description='list downloadable files')
     @app_commands.describe(filter='A sub string to filter results by')
     @app_commands.describe(folder='The folder to list the contents of')
-    async def ls(self, interaction: discord.Interaction, filter: str = '', folder: str = './'):
+    async def ls(self, interaction:discord.Interaction, filter: str = '', folder: str = './'):
         '''
         List files 
         '''
@@ -89,44 +89,44 @@ class FileManagementCog(commands.Cog):
         self.logger.info(f'USAGE - SUCCESS - /ls - {interaction.user.global_name} listed folder: {target_path} in {interaction.guild.name}')
         await msg.edit(content='\n'.join(file_details))
 
-@app_commands.command(name='rm', description='Delete a file or folder')
-@app_commands.describe(file='The file or folder to delete')
-async def rm(self, interaction: discord.Interaction, file: str):
-    if interaction.guild is None:
-        return
-    ctx = await commands.Context.from_interaction(interaction)
-    msg = await ctx.reply('working...', ephemeral=True)
-    self.logger.debug(f'INIT - /rm - {interaction.user.global_name}, file:{file} in {interaction.guild.name}')
-    server = get_safe_guild_name(interaction.guild.name)
-    base_path = os.path.abspath(f'./files/{server}')
-    target_path = os.path.abspath(os.path.join(base_path, file))
-    self.logger.debug(f'RESULT - base_path: {base_path} target_path: {target_path}')
-    
-    if not target_path.startswith(base_path):
-        self.logger.warning(f'ABUSE - /rm - {interaction.user.global_name} attempted to delete outside of server folder\ntarget: {target_path}\narg: {file}')
-        await msg.edit(content='Invalid file path!')
-        return
-    
-    if target_path == base_path:
-        self.logger.warning(f'ABUSE - /rm - {interaction.user.global_name} attempted to delete server folder\ntarget: {target_path}\narg: {file}')
-        await msg.edit(content='Invalid file path!')
-        return
-    
-    if not os.path.exists(target_path):
-        self.logger.info(f'USAGE - FAIL - /rm - {interaction.user.global_name} attempted to delete non-existent file: {target_path}')
-        await msg.edit(content=f'Could not find {file} to delete!\nCall /ls')
-        return
-    
-    try:
-        if os.path.isdir(target_path):
-            shutil.rmtree(target_path)
-        else:
-            os.remove(target_path)
-        self.logger.info(f'USAGE - SUCCESS - /rm - {interaction.user.global_name} deleted: {target_path}')
-        await msg.edit(content=f'Deleted {file}')
-    except Exception as e:
-        self.logger.error(f'ERROR - /rm - {interaction.user.global_name} failed to delete {target_path}: {e}')
-        await msg.edit(content=f'Failed to delete {file}')
+    @app_commands.command(name='rm', description='Delete a file or folder')
+    @app_commands.describe(file='The file or folder to delete')
+    async def rm(self, interaction:discord.Interaction, file: str):
+        if interaction.guild is None:
+            return
+        ctx = await commands.Context.from_interaction(interaction)
+        msg = await ctx.reply('working...', ephemeral=True)
+        self.logger.debug(f'INIT - /rm - {interaction.user.global_name}, file:{file} in {interaction.guild.name}')
+        server = get_safe_guild_name(interaction.guild.name)
+        base_path = os.path.abspath(f'./files/{server}')
+        target_path = os.path.abspath(os.path.join(base_path, file))
+        self.logger.debug(f'RESULT - base_path: {base_path} target_path: {target_path}')
+        
+        if not target_path.startswith(base_path):
+            self.logger.warning(f'ABUSE - /rm - {interaction.user.global_name} attempted to delete outside of server folder\ntarget: {target_path}\narg: {file}')
+            await msg.edit(content='Invalid file path!')
+            return
+        
+        if target_path == base_path:
+            self.logger.warning(f'ABUSE - /rm - {interaction.user.global_name} attempted to delete server folder\ntarget: {target_path}\narg: {file}')
+            await msg.edit(content='Invalid file path!')
+            return
+        
+        if not os.path.exists(target_path):
+            self.logger.info(f'USAGE - FAIL - /rm - {interaction.user.global_name} attempted to delete non-existent file: {target_path}')
+            await msg.edit(content=f'Could not find {file} to delete!\nCall /ls')
+            return
+        
+        try:
+            if os.path.isdir(target_path):
+                shutil.rmtree(target_path)
+            else:
+                os.remove(target_path)
+            self.logger.info(f'USAGE - SUCCESS - /rm - {interaction.user.global_name} deleted: {target_path}')
+            await msg.edit(content=f'Deleted {file}')
+        except Exception as e:
+            self.logger.error(f'ERROR - /rm - {interaction.user.global_name} failed to delete {target_path}: {e}')
+            await msg.edit(content=f'Failed to delete {file}')
 
 async def setup(client):
   await client.add_cog(FileManagementCog(client))
