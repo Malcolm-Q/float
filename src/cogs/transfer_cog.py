@@ -8,6 +8,7 @@ import re
 from src.utils import Config, convert_to_mb, format_time_difference, get_safe_guild_name, get_logger
 
 CONFIG = Config.from_json()
+CODE_REGEX = re.compile(r"^[a-zA-Z0-9]+(-[a-zA-Z0-9]+)*$")
 
 class FileTransferCog(commands.Cog):
     def __init__(self, client):
@@ -22,6 +23,10 @@ class FileTransferCog(commands.Cog):
             raise ValueError("No guild found")
         ctx = await commands.Context.from_interaction(interaction)
         msg = await ctx.reply('working...', ephemeral=True)
+        if not CODE_REGEX.fullmatch(code):
+            await interaction.response.send_message("Invalid code format. Please provide a valid code.", ephemeral=True)
+            self.logger.warning(f"SECURITY - Invalid code provided: {code}")
+            return
         self.logger.debug(f'INIT - /upload - {interaction.user.global_name} called /upload code:{code} in {interaction.guild.name}')
         guild = get_safe_guild_name(interaction.guild.name)
         self.init_guild_in_processes(guild)
@@ -90,23 +95,23 @@ class FileTransferCog(commands.Cog):
                 self.logger.debug(f"EXITING - /upload - {pid} - PROCESS EXITED GRACEFULLY")
             self.processes[guild].pop(pid)
 
-    @app_commands.command(name='serve', description='Download a file from a bot')
+    @app_commands.command(name='download', description='Download a file from the bot')
     @app_commands.describe(file = "The name of the file")
-    async def serve(self, interaction:discord.Interaction, file:str):
+    async def download(self, interaction:discord.Interaction, file:str):
         if interaction.guild is None:
             raise ValueError("No guild found")
         ctx = await commands.Context.from_interaction(interaction)
         msg = await ctx.reply('working...', ephemeral=True)
-        self.logger.debug(f'INIT - /serve - {interaction.user.global_name} called /serve file:{file} in {interaction.guild.name}')
+        self.logger.debug(f'INIT - /download - {interaction.user.global_name} called /download file:{file} in {interaction.guild.name}')
         guild = get_safe_guild_name(interaction.guild.name)
         self.init_guild_in_processes(guild)
         if len(self.processes[guild]) > CONFIG.max_active_processes:
             await msg.edit(content="Too many active processes. Please try again later.")
-            self.logger.info(f'USAGE - FAIL - /serve - {interaction.user.global_name} too many active processes in {interaction.guild.name} max_processes:{CONFIG.max_active_processes}, active_processes:{len(self.processes[guild])}')
+            self.logger.info(f'USAGE - FAIL - /download - {interaction.user.global_name} too many active processes in {interaction.guild.name} max_processes:{CONFIG.max_active_processes}, active_processes:{len(self.processes[guild])}')
         base_path = os.path.abspath(f'./files/{guild}')
         target_path = os.path.abspath(os.path.join(base_path, file))
         if not target_path.startswith(base_path):
-            self.logger.warning(f'ABUSE - /serve - {interaction.user.global_name} attempted to access outside of guild folder\ntarget: {target_path}\narg: {file}')
+            self.logger.warning(f'ABUSE - /download - {interaction.user.global_name} attempted to access outside of guild folder\ntarget: {target_path}\narg: {file}')
             await msg.edit(content='Invalid file path!')
             return
         if not os.path.exists(f"./files/{guild}/{file}"):
@@ -117,22 +122,22 @@ class FileTransferCog(commands.Cog):
         file_size_mb = os.path.getsize(f'./files/{guild}/{file}') / (1024 * 1024)
         if file_size_mb > CONFIG.max_file_size_mb:
             await msg.edit(content=f"File exceeds download limit of {CONFIG.max_file_size_mb} MB")
-            self.logger.info(f"USAGE - FAIL - /serve - {interaction.user.global_name} File {file} exceeds download limit of {CONFIG.max_file_size_mb} MB")
+            self.logger.info(f"USAGE - FAIL - /download - {interaction.user.global_name} File {file} exceeds download limit of {CONFIG.max_file_size_mb} MB")
             return
-        self.logger.debug(f"RUN - /serve - {interaction.user.global_name} starting croc for file: {file}")
+        self.logger.debug(f"RUN - /download - {interaction.user.global_name} starting croc for file: {file}")
         process = await asyncio.create_subprocess_exec(
             CONFIG.croc_path,"--yes", "send", f"./files/{guild}/{file}",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
         pid = process.pid
-        self.logger.debug(f'RUN - /serve - subprocess started with pid: {pid}')
+        self.logger.debug(f'RUN - /download - subprocess started with pid: {pid}')
         self.processes[guild][pid] = {
             'file': file,
             'time': datetime.now(),
             'owner': interaction.user.id,
             'process': process,
-            'operation': 'serve',
+            'operation': 'download',
             'cancelled': False,
             'active': False
         }
@@ -143,13 +148,13 @@ class FileTransferCog(commands.Cog):
         if process.stderr is None:
             if process.returncode is None:
                 process.terminate()
-            self.logger.error(f'ERROR - /serve - {interaction.user.global_name} failed to start process with pid: {pid}')
+            self.logger.error(f'ERROR - /download - {interaction.user.global_name} failed to start process with pid: {pid}')
             return
         try:
             code, file_size = await self.get_code_from_croc(process)
             if file_size and code:
                 await msg.edit(content=f"File size: {file_size}\nCode: {code}")
-                self.logger.info(f"USAGE - SUCCESS - /serve - {interaction.user.global_name} File size: {file_size}, Code: {code}")
+                self.logger.info(f"USAGE - SUCCESS - /download - {interaction.user.global_name} File size: {file_size}, Code: {code}")
                 while True:
                     try:
                         chunk = await asyncio.wait_for(process.stderr.read(1024), timeout=60)
@@ -157,7 +162,7 @@ class FileTransferCog(commands.Cog):
                         process.kill()
                         self.processes[guild][pid]['cancelled'] = True
                         await msg.edit(content="Request cancelled!\nEnter the code within 60 seconds of requesting it.")
-                        self.logger.info(f"USAGE - FAIL - /serve - {interaction.user.global_name} Request cancelled due to timeout")
+                        self.logger.info(f"USAGE - FAIL - /download - {interaction.user.global_name} Request cancelled due to timeout")
                         break
                     if not chunk:
                         continue
@@ -166,17 +171,17 @@ class FileTransferCog(commands.Cog):
                         break
             else:
                 await msg.edit(content="Failed to extract file size or code.")
-                self.logger.error(f"ERROR - /serve - {interaction.user.global_name} Failed to extract file size or code")
+                self.logger.error(f"ERROR - /download - {interaction.user.global_name} Failed to extract file size or code")
                 process.kill()
             await process.wait()
         finally:
             if not self.processes[guild][pid]['cancelled']:
                 await msg.edit(content="File served!")
             if process.returncode is None:
-                self.logger.debug(f"EXITING - /serve - {pid} - PROCESS TERMINATED")
+                self.logger.debug(f"EXITING - /download - {pid} - PROCESS TERMINATED")
                 process.terminate()
             else:
-                self.logger.debug(f"EXITING - /serve - {pid} - PROCESS EXITED GRACEFULLY")
+                self.logger.debug(f"EXITING - /download - {pid} - PROCESS EXITED GRACEFULLY")
             await process.wait()
             if process in self.processes[guild]:
                 self.processes[guild].pop(pid)
@@ -278,26 +283,26 @@ class FileTransferCog(commands.Cog):
         code = None
         pid = process.pid
 
-        self.logger.debug(f"RUN - /serve - reading process for pid: {pid}")
+        self.logger.debug(f"RUN - /download - reading process for pid: {pid}")
         i = 0
         while True:
             i += 1
             chunk = await process.stderr.read(1024)
             if not chunk:
-                self.logger.debug(f"RUN - /serve - chunk {i} is falsey, breaking")
+                self.logger.debug(f"RUN - /download - chunk {i} is falsey, breaking")
                 break
-            self.logger.debug(f"RUN - /serve - found chunk {i}")
+            self.logger.debug(f"RUN - /download - found chunk {i}")
             buffer += chunk.decode()
             size_match = re.search(r"Sending .* \((.*)\)", buffer)
             if size_match:
-                self.logger.debug(f"RUN - /serve - chunk {i} matched file size")
+                self.logger.debug(f"RUN - /download - chunk {i} matched file size")
                 file_size = size_match.group(1)
             code_match = re.search(r"Code is: (.*)", buffer)
             if code_match:
-                self.logger.debug(f"RUN - /serve - chunk {i} matched code")
+                self.logger.debug(f"RUN - /download - chunk {i} matched code")
                 code = code_match.group(1)
             if file_size and code:
-                self.logger.debug(f"RUN - /serve - chunk {i} matched both file size and code, breaking")
+                self.logger.debug(f"RUN - /download - chunk {i} matched both file size and code, breaking")
                 break
 
         return code, file_size

@@ -25,7 +25,7 @@ class FileManagementCog(commands.Cog):
         target_path = os.path.abspath(os.path.join(base_path, target))
         output_path = os.path.abspath(os.path.join(base_path, output))
         if not target_path.startswith(base_path) or not output_path.startswith(base_path):
-            self.logger.warning(f'ABUSE - /mv - {interaction.user.global_name} attempted to delete outside of server folder\ntarget: {target_path}\narg: {target}\noutput: {output_path}\narg: {output}')
+            self.logger.warning(f'ABUSE - /mv - {interaction.user.global_name} attempted to move outside of server folder\ntarget: {target_path}\narg: {target}\noutput: {output_path}\narg: {output}')
             await msg.edit(content='Invalid file path!')
             return
         if not os.path.exists(target_path):
