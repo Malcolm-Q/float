@@ -36,9 +36,20 @@ class FileManagementCog(commands.Cog):
             self.logger.info(f'USAGE - FAIL - /mv - {interaction.user.global_name} attempted to move file: {target_path} to existing path: {output_path}')
             await msg.edit(content=f'{output} already exists!\nCall /rm to delete it or rename it first')
             return
-        os.rename(target_path, output_path)
-        self.logger.info(f'USAGE - SUCCESS - /mv - {interaction.user.global_name} moved: {target_path} to: {output_path}')
-        await msg.edit(content=f'Moved {target} to {output}')
+        output_dir = os.path.dirname(output_path)
+        try:
+            os.makedirs(output_dir, exist_ok=True)
+        except Exception as e:
+            self.logger.error(f'ERROR - /mv - {interaction.user.global_name} failed to create directories for {output_path}: {e}')
+            await msg.edit(content='Failed to create necessary directories for the output file!')
+            return
+        try:
+            os.rename(target_path, output_path)
+            self.logger.info(f'USAGE - SUCCESS - /mv - {interaction.user.global_name} moved: {target_path} to: {output_path}')
+            await msg.edit(content=f'Moved {target} to {output}')
+        except Exception as e:
+            self.logger.error(f'ERROR - /mv - {interaction.user.global_name} failed to move {target_path} to {output_path}: {e}')
+            await msg.edit(content='Failed to move the file. Please try again.')
 
     @app_commands.command(name='ls', description='list downloadable files')
     @app_commands.describe(filter='A sub string to filter results by')
